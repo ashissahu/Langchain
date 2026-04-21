@@ -14,7 +14,7 @@ uv is an extremely fast Python package and project manager (written in Rust) tha
 
 - git checkout --orphan project/hello-world # Create a new orphan branch named "project/hello-world"
 - git rm -rf . # Remove all files from the index
-- echo "langchain" > requirements.txt # Create a new requirements.txt file with the content "langchain"
-- git add requirements.txt # Add the new requirements.txt file to the index
-- git commit -m "Add requirements.txt with langchain" # Commit the changes with a message
-- git checkout main # Switch back to the main branch
+
+- git add . # Stage all changes for commit
+- git commit -m "Add main.py and update requirements.txt and .env files" # Commit with a message
+- git push --set-upstream origin project/hello-world # Push the changes to the remote repository and set the upstream branch to project/hello-world
