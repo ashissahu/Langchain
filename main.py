@@ -1,37 +1,59 @@
 from dotenv import load_dotenv
-
 load_dotenv()
-from langchain.agents import create_agent
-from langchain.tools import tool
-from langchain_core.messages import HumanMessage
-from langchain_openai import ChatOpenAI
-from tavily import TavilyClient
 
-tavily=TavilyClient()
+from langchain.agents import create_agent #create_agent is a function that creates an agent that can use tools to perform tasks.
+from langchain.tools import tool #tool is a decorator that defines a function as a tool that can be used by an agent.
+from langchain_core.messages import HumanMessage #HumanMessage is a class that represents a message from a human to the agent. It has a content attribute that contains the text of the message.
+from langchain_openai import ChatOpenAI
+from tavily import  TavilyClient
+
+tavily=TavilyClient() #We can use the tavily client to create a tool that searches for information on the web and returns structured data in return. This can be useful for agents that need to access external information to perform tasks or answer questions.
+
+#What are tools?
+#Tools are functions that an agent can call to perform specific tasks. 
+# They can be used to access external APIs, perform calculations, or manipulate data. 
+# By using tools, agents can extend their capabilities and interact with the world in more complex ways.
+
+#Importance of Hints, Types, and Descriptions in Tools
+#Hints, types, and descriptions are crucial for tools because they provide context and guidance to the agent on how to use the tool effectively. 
+# Hints can suggest when and how to use the tool, types can specify the expected input and output formats, and descriptions can explain the purpose and 
+# functionality of the tool. This information helps the agent make informed decisions about when to call the tool and how to interpret its results, 
+# ultimately improving the agent's performance and accuracy.
 
 @tool
-def search(query:str) -> str:
-    """
-    Tool that Searches over the internet
+def search(query: str) -> str:
+    """Tool that searches the web for the given query and returns the results.
     Args:
-        query: The query to search for
+        query (str): The search query.
     Returns:
-        The search result
+        str: The search results.
     """
-    print(f"Searching for {query}")
-    return tavily.search(query=query)
+    print(f"Searching for '{query}'...")
+    return tavily.search(query=query) #The search function is defined as a tool using the @tool decorator. It takes a query as input and returns the search results. In this case, it uses the tavily client to perform the search and return the results. The print statement is included to indicate when the search is being performed.
 
+#llm = ChatOpenAI()
 llm = ChatOpenAI(model="gpt-4o")
 tools = [search]
-agent = create_agent(model=llm, tools=tools)
+agent = create_agent(llm, tools=tools) #create_agent function takes an LLM and a list of tools as input and returns an agent that can use those tools to answer questions and perform tasks.
+
+#If we see the function variables in the debug  output , we can see that the agent has a variable called "messages" which is a list of HumanMessage, AIMessage, ToolMessage, and AIMessage.
+# When we call the agent with a HumanMessage, the agent will process the message and decide which tool to call based on the content of the message.
+# For example, if the message is "What is the weather in India today?", the agent will recognize that it needs to call the search tool with the query "What is the weather in India today?".
+# The agent will then call the search tool, get the result, and pass the result back to the LLM to generate a final response for the user.
 
 
+# The LLM decides which tool to call and with what arguments based on the input it receives.
+# then Langchain went and ran the tool and got the result and then it passed the result back to the LLM to generate a final response for the user.
 
 def main():
-    print("Hello from langchain-course!")
-    result = agent.invoke({"messages":HumanMessage(content="What is the weather in Bangalore?")})
-    print(result)
+    print("Hello from langchain!")
+    response = agent.invoke({"messages": [HumanMessage(content="What is the weather in Bangalore, India?")]})
+    print(response)
 
 
 if __name__ == "__main__":
     main()
+
+## In this code, we have defined a tool called "search" that uses the TavilyClient to perform a web search based on a query. 
+# We then create an agent using the ChatOpenAI model and the search tool. 
+# When we invoke the agent with a HumanMessage asking about the weather in Bangalore, India, the agent will use the search tool to get the relevant information and return it as a response.
