@@ -5,7 +5,7 @@ load_dotenv()
 
 from langchain.agents import create_agent #create_agent is a function that creates an agent that can use tools to perform tasks.
 from langchain.tools import tool #tool is a decorator that defines a function as a tool that can be used by an agent.
-from langchain_core .messages import HumanMessage #HumanMessage is a class that represents a message from a human to the agent. It has a content attribute that contains the text of the message.
+from langchain_core.messages import HumanMessage #HumanMessage is a class that represents a message from a human to the agent. It has a content attribute that contains the text of the message.
 from langchain_openai import ChatOpenAI
 
 #What are tools?
