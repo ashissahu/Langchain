@@ -1,5 +1,5 @@
 #Using OPENAI
-#Langsmith Tracing -https://smith.langchain.com/public/1132e7a1-4132-4db4-bba0-7d243f7d2189/r
+#Langsmith Tracing -https://smith.langchain.com/public/889f17de-3132-480a-9b3e-4d34b70678ee/r
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -51,7 +51,7 @@ def run_agent(question: str):
 
     #llm = init_chat_model(f"openai:gpt-5.2", temperature=0) #This initializes a chat model using the init_chat_model function. The model is specified as "openai:{MODEL}", which indicates that we want to use the specified OpenAI model. The temperature parameter is set to 0, which means that the model will generate deterministic responses (i.e., it will always generate the same response for the same input). This is useful for testing and debugging, as it allows us to see consistent behavior from the model.
     #not working properly with gpt -5.2
-    llm = init_chat_model(f"openai:gpt-4o", temperature=0) ##not working properly with gpt -4o either. It seems that the model is not generating tool calls as expected. We may need to check if the model supports tool calling and if we are using the correct syntax for defining the tools and calling them in the messages.
+    llm = init_chat_model(f"openai:gpt-5", temperature=0) #Using GPT-5 instead of GPT-5.2 because the latter is not working properly with tool calling in this example. The GPT-5 model supports function calling, which allows us to use the bind_tools method to associate the tools we defined with the language model. This way, the model can call these tools during its reasoning process to generate more informed responses based on the information provided by the tools.
     llm_with_tools = llm.bind_tools(tools) # binds the tools to llm.Only works if llm supports function calling . This allows the model to call the tools we defined earlier during its reasoning process. When the model generates a response, it can include instructions to call a specific tool with certain arguments. The bind_tools method enables this functionality by associating the tools with the language model, allowing it to use them as part of its response generation.
 
     print(f"Question: {question}")
