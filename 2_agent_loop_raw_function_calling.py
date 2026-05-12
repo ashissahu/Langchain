@@ -1,16 +1,20 @@
-from dotenv import load_dotenv
+#Using OPENAI
+#Langsmith Tracing -https://smith.langchain.com/public/951afb3e-d76f-4674-9f61-9f4f8dbbc449/r
 
+#Here we are using Raw function calling rather than implementing langchain functionality directly
+
+from dotenv import load_dotenv
 load_dotenv()
 
-import ollama
-from langsmith import traceable
+import ollama #Ollama is a library that provides an interface to interact with Ollama models. It allows us to initialize and use language models hosted on Ollama's platform. In this code, we are using Ollama to initialize a chat model that supports function calling, which is essential for the agent to be able to call the tools we defined during its reasoning process.
+from langsmith import traceable #traceable is a decorator that allows us to trace the execution of a function and log it to Langsmith, which is a tool for monitoring and analyzing the performance of language models.
 
-MAX_ITERATIONS = 10
+MAX_ITERATIONS = 10 #This constant defines the maximum number of iterations that the agent will perform when trying to generate a response. It is used to prevent infinite loops and ensure that the agent does not get stuck in a cycle of generating responses without making progress towards a final answer.
 MODEL = "qwen3:1.7b"
 
 
 # --- Tools (LangChain @tool decorator) ---
-@traceable(run_type="tool")
+@traceable(run_type="tool") #This decorator allows us to trace the execution of the get_product_price function and log it to Langsmith. By using this decorator, we can see when the function is called, what arguments are passed to it, and what value it returns. This can help us understand how the agent is using this tool and identify any issues or areas for improvement in its usage.
 def get_product_price(product: str) -> float:
     """Look up the price of a product in the catalog."""
     print(f"    >> Executing get_product_price(product='{product}')")
@@ -18,7 +22,7 @@ def get_product_price(product: str) -> float:
     return prices.get(product, 0)
 
 
-@traceable(run_type="tool")
+@traceable(run_type="tool") #This decorator allows us to trace the execution of the apply_discount function and log it to Langsmith. By using this decorator, we can see when the function is called, what arguments are passed to it, and what value it returns. This can help us understand how the agent is using this tool and identify any issues or areas for improvement in its usage.
 def apply_discount(price: float, discount_tier: str) -> float:
     """Apply a discount tier to a price and return the final price.
     Available tiers: bronze, silver, gold."""
@@ -27,9 +31,17 @@ def apply_discount(price: float, discount_tier: str) -> float:
     discount = discount_percentages.get(discount_tier, 0)
     return round(price * (1 - discount / 100), 2)
 
-# Difference 2: Without @tool, we must MANUALLY define the JSON schema for each function.
-# This is exactly what LangChain's @tool decorator generates automatically
-# from the function's type hints and docstring.
+#run_type="tool" in the @traceable decorator indicates that these functions are tools that the agent can call during its reasoning process. By marking them as tools, we can track their usage and see how the agent is utilizing them to generate responses. This is important for understanding the agent's behavior and ensuring that it is using the tools correctly to arrive at accurate answers for the user's questions.
+#It is entirrely for traceability and has no effect on the actual execution of the functions. The functions will work the same way regardless of whether we use the @traceable decorator or not. The decorator is simply a way to log the execution of these functions to Langsmith for monitoring and analysis purposes.
+
+#These 2 are still python functions and we need to convert them into tools that the language model can call during its reasoning process. 
+# To make these functions available as tools to the model, we will need to define a JSON schema for each function that describes its name, description, parameters, and return type. 
+# This schema will allow the model to understand how to call these functions and what arguments to pass when it decides to use them during its reasoning process.
+#(JSOn Schema tells the LLM how to use the tool)
+
+
+# Difference2: Without @tool, we must MANUALLY define the JSON schema for each function.
+# This is exactly what LangChain's @tool decorator generates automatically from the function's type hints and docstring.
 tools_for_llm = [
     {
         "type": "function",
@@ -85,11 +97,12 @@ tools_for_llm = [
 #       """
 # We keep the manual JSON version here so you can see what @tool hides from you.
 
+
+
 # --- Helper: traced Ollama call ---
 # Difference 3: Without LangChain, we must manually trace LLM calls for LangSmith.
 
-
-@traceable(name="Ollama Chat", run_type="llm")
+@traceable(name="Ollama Chat", run_type="llm") #This decorator allows us to trace the execution of the ollama_chat_traced function and log it to Langsmith. By using this decorator, we can see when the function is called, what arguments are passed to it, and what value it returns. This can help us understand how the agent is interacting with the Ollama chat model and identify any issues or areas for improvement in its usage.Theis is is taken care of automatically when using LangChain's llm classes, but since we are calling ollama.chat() directly, we need to manually add this traceable function to ensure that our LLM calls are logged to Langsmith for monitoring and analysis.
 def ollama_chat_traced(messages):
     
     return ollama.chat(model=MODEL, tools=tools_for_llm, messages=messages)
@@ -97,7 +110,7 @@ def ollama_chat_traced(messages):
 # --- Agent Loop ---
 
 
-@traceable(name="Ollama Agent Loop")
+@traceable(name="Ollama Agent Loop") #This decorator allows us to trace the execution of the run_agent function and log it to Langsmith. By using this decorator, we can see how the agent is making decisions, which tools it is calling, and how it is generating its responses. This can help us understand the agent's behavior and identify any issues or areas for improvement.This is similar to using LangChain's Agent class, which automatically traces the agent's reasoning process. Since we are implementing the agent loop manually, we need to add this traceable decorator to ensure that the entire loop is logged to Langsmith for monitoring and analysis.
 def run_agent(question: str):
     tools_dict = {
         "get_product_price": get_product_price,
@@ -135,10 +148,13 @@ def run_agent(question: str):
         print(f"\n--- Iteration {iteration} ---")
 
         # Difference 5: ollama.chat() directly instead of llm_with_tools.invoke()
-        response = ollama_chat_traced(messages=messages)
-        ai_message = response.message
+        response = ollama_chat_traced(messages=messages) #This sends the list of messages to the Ollama chat model and gets a response back. The ollama_chat_traced function is a wrapper around the ollama.chat() function that includes tracing for Langsmith. The response variable will contain the model's response, which may include content (text) as well as tool calls (instructions to use tools). We can then analyze this response to see if it includes any tool calls or if it is the final answer to the user's question.
+        ai_message = response.message #The message object from the model's response, which contains the content of the response as well as any tool calls that the model has decided to make based on its reasoning process. The ai_message variable will allow us to access both the text content of the model's response and the tool calls it wants to execute, which we can then process accordingly in our agent loop.
 
-        tool_calls = ai_message.tool_calls
+        tool_calls = ai_message.tool_calls #Which tools the model decided should be invoked. This works only if:1.You passed tools/functions to the model 2.Your model supports tool calling (e.g. GPT-4, some Ollama models with function calling) . 
+        #The tool_calls variable will contain a list of tool calls that the model has decided to make based on its response. 
+        # Each tool call will include the name of the tool to be called, the arguments to be passed to the tool, and a unique identifier for the tool call. 
+        # We can use this information to execute the appropriate tools and provide the results back to the model in subsequent iterations.
 
         # If no tool calls, this is the final answer
         if not tool_calls:
@@ -179,3 +195,17 @@ if __name__ == "__main__":
     print("Hello LangChain Agent (.bind_tools)!")
     print()
     result = run_agent("What is the price of a laptop after applying a gold discount?")
+
+
+## In this code, we have implemented a simple agent loop that interacts with an Ollama chat model to answer a user's question about 
+# product pricing and discounts. 
+# The agent has access to two tools: get_product_price and apply_discount, which it can call during its reasoning process to retrieve
+# information and perform calculations.
+#  We have also added tracing using the @traceable decorator from Langsmith to log the execution of our functions and the agent loop 
+# for monitoring and analysis purposes. 
+# The agent will continue to iterate, calling tools as needed, until it generates a final answer without any tool calls or reaches 
+# the maximum number of iterations.
+
+# This implementtion is specific to Ollama and does not use LangChain's Agent or Tool classes, so we had to manually define the tools, their JSON schemas, and the agent loop.
+# For claude or other models, the implementation would be different if we plan tio implement manually. 
+# WE can use LangChain's Agent and Tool classes to abstract away much of this manual work and have a more standardized implementation that can work across different LLMs with minimal changes.
