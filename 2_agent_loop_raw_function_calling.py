@@ -209,3 +209,58 @@ if __name__ == "__main__":
 # This implementtion is specific to Ollama and does not use LangChain's Agent or Tool classes, so we had to manually define the tools, their JSON schemas, and the agent loop.
 # For claude or other models, the implementation would be different if we plan tio implement manually. 
 # WE can use LangChain's Agent and Tool classes to abstract away much of this manual work and have a more standardized implementation that can work across different LLMs with minimal changes.
+
+#Q & A
+#1. In this file, tool schemas are defined as hand-written JSON dictionaries (tools_for_llm). What does this reveal about what LangChain's @tool decorator was doing for us?
+
+# - @tool was auto-generating these exact JSON schemas from the function's name, type hints, and docstring, saving us from writing and maintaining them by hand.
+# - Compare: with @tool, you write a typed Python function with a docstring, and the schema is generated automatically. Without it, you must manually specify each parameter's name, type, description, and required status in a nested JSON structure.
+
+#2.   Instead of SystemMessage(content=...) and HumanMessage(content=...), this file uses plain dictionaries like {"role": "system", "content": ...}. What's the trade-off?
+
+#- Dictionaries are provider-specific — this format works for Ollama/OpenAI but other providers may use different structures, whereas LangChain's message types provide a universal format
+# The {"role": "...", "content": "..."} format follows the OpenAI/Ollama convention. If you switched to a provider with a different message format, you'd need to rewrite all your message construction. LangChain's typed messages abstract this away. 
+
+#3. The LangChain version calls tools with tool_to_use.invoke(tool_args), but this file calls them with tool_to_use(**tool_args). What is the difference?
+
+# - invoke() is LangChain's standardized execution interface that adds validation, tracing, and error handling around the call, while **tool_args is a direct Python function call with none of that.
+# - LangChain's invoke() wraps the function call with input validation (checking types match the schema), integration with LangSmith tracing, and consistent error handling.
+# - The raw **tool_args call is plain Python — if the arguments are wrong, you get a raw Python error with no additional context.
+
+#4. The LangChain version uses tool_call.get("name") (dict access), but this file uses tool_call.function.name (attribute access). Why the difference?
+
+# - LangChain returns tool calls as standardized dictionaries, while Ollama's client returns them as typed objects with nested attributes — each provider structures this data differently .
+# - This illustrates a key point: without LangChain, your code is coupled to a specific provider's response format.
+#  - Ollama returns objects with .function.name and .function.arguments. 
+# - OpenAI's raw API returns a similar but not identical structure. 
+# - LangChain normalizes all of these into a consistent dictionary format.
+
+#5. In the LangChain version, ToolMessage requires a tool_call_id. In this raw version, the tool result is appended as {"role": "tool", "content": str(observation)} with no ID. Why?
+
+# - Ollama's local models don't require a tool_call_id to match results to calls, while cloud providers like OpenAI strictly require it — this is another provider-specific difference that LangChain handles for you.
+# - Ollama processes tool results sequentially and doesn't enforce ID matching. 
+# - OpenAI's API strictly requires tool_call_id to correlate results with calls. 
+# - LangChain's ToolMessage always requires the ID, ensuring your code works across all providers without modification.
+
+#6. This file uses @traceable decorators for tracing, while the LangChain version uses init_chat_model() which integrates tracing automatically. What does this tell us?
+
+# - Without LangChain, you must manually decorate each function with @traceable and specify run_type to get observability, whereas LangChain's model and tool wrappers report traces automatically .
+# - Notice the extra effort: @traceable(run_type="tool") on each tool function, @traceable(name="Ollama Chat", run_type="llm") on the chat wrapper, and
+# - @traceable(name="Ollama Agent Loop") on the agent. 
+# - With LangChain, the @tool decorator and init_chat_model() handle tracing integration automatically.
+
+#7. Comparing this file to the LangChain version, what fundamentally stays the same and what changes?
+
+# - The agent loop pattern stays the same (iterate, check for tool calls, execute, append results), but without LangChain you must manually handle schemas, message formatting, provider-specific response parsing, tool invocation, and tracing.
+# - The pattern is the same — that’s the agent loop concept. But the plumbing changes significantly: 35+ lines of manual JSON schemas, provider-specific dict messages, attribute-based response parsing, direct function calls without validation, and manual tracing decorators. LangChain eliminates this boilerplate so you can focus on the logic.
+
+
+
+
+
+
+
+
+
+
+
