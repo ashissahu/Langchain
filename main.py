@@ -53,5 +53,10 @@ def main():
 if __name__ == "__main__":
     main()
 
-## In this code, we have defined a tool called "search" that simulates searching the web for a given query and returns a hardcoded result.
-# We then create an agent using the ChatOpenAI LLM and the search tool. Finally, we invoke the agent with a HumanMessage asking about the weather in India today, and print the response.
+
+#Here's a breakdown of the code:
+#1. We import the necessary libraries and load environment variables.
+#2. We define a tool called search that simulates searching the web for a query and returns a hardcoded result.
+#3. We create an instance of ChatOpenAI as our LLM and define a list of tools that includes our search tool.
+#4. We create an agent using the create_agent function, passing in our LLM and tools.
+#5. In the main function, we invoke the agent with a HumanMessage asking about the weather in India, and we print the response from the agent. 
