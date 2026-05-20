@@ -40,3 +40,10 @@ Given the following information {Information} about a person , I want you to cre
 
 if __name__ == "__main__":
     main()
+
+#Here, 
+# 1. first we define a long string containing detailed information about Narendra Modi, which serves as the input for our summarization task.
+# 2. We then create a prompt template that instructs the language model to generate a short summary and two interesting facts about the person based on the provided information. The template uses a placeholder {Information} that will be filled with the actual information string when we invoke the chain.
+# 3. We initialize a ChatOpenAI language model with the specified parameters, including the model name "gpt-5" and a temperature of 0 for deterministic output.
+# 4. We create a chain by combining the prompt template and the language model, which allows us to generate a prompt based on the template and then pass it to the language model for response generation.
+# 5. Finally, we invoke the chain with the input information and print the generated summary to the console.
