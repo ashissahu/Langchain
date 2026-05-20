@@ -1,4 +1,4 @@
-#Langsmith Tracing - https://smith.langchain.com/o/a7f8bd85-b797-5733-8038-ce1ba498c5e8/projects/p/c710d3bf-1908-4cd1-ab61-866062ae04c7?columnVisibilityModel_runs%3AcolumnVisibilityModel%3Adefault=%7B%22feedback_stats%22%3Afalse%2C%22reference_example%22%3Afalse%7D&scroll_to=output&peek=20260511T132030Z019e1732-4333-7090-8e42-92d66058c4f0&peeked_trace=20260511T132025966104Z019e1732-316e-76a0-82a9-6cdc4f502ae4
+#Langsmith Tracing - https://smith.langchain.com/public/d4c38e15-f911-4a83-a8ee-7269270f82df/r
 
 from typing import List #List is a type hint that indicates that a variable is expected to be a list of a certain type. For example, List[int] indicates that the variable should be a list of integers. This helps with code readability and can also assist with static type checking.
 from pydantic import BaseModel, Field #BaseModel is a class from the Pydantic library that provides data validation and parsing. It allows us to define data models with specific fields and types, and it will automatically validate the input data against those definitions. Field is a function that allows us to specify additional metadata for each field in the model, such as default values, descriptions, and validation rules.
@@ -50,7 +50,11 @@ def main():
 if __name__ == "__main__":
     main()
 
-# In this code, we define a main function that prints a greeting message and then invokes the agent with a HumanMessage containing a 
-# query about searching for job postings for an AI engineer in Bangalore on LinkedIn. 
-# The agent will use the TavilySearch tool to perform the search and generate a response based on the query. 
-# Finally, we print the result of the agent's response with response_format=AgentResponse, which will include the answer and the sources used to generate that answer.
+#Here's a breakdown of the code:
+#1. We import necessary libraries and load environment variables.
+#2. We define two Pydantic models, Source and AgentResponse, to structure the data for sources and agent responses.
+#3. We create an instance of the ChatOpenAI model and specify the "gpt-4o" model to use.
+#4. We create a list of tools that includes the TavilySearch tool for web searching.
+#5. We create an agent using the create_agent function, passing in the language model, the tools, and the response format.
+#6. We define a main function that invokes the agent with a HumanMessage containing a query about job postings for an AI engineer in Bangalore on LinkedIn.
+#7. Finally, we call the main function when the script is executed. The agent will process the query, decide which tool to use, execute the tool, and return a structured response containing the answer and the sources used.
