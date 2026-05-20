@@ -41,3 +41,10 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+#Here's a breakdown of the code:
+#1. We import necessary libraries and load environment variables.
+#2. We define a tool function search that takes a query string and returns search results using the TavilyClient.
+#3. We initialize a ChatOpenAI LLM and create an agent with the LLM and the search tool.
+#4. In the main function, when  we invoke the agent with a HumanMessage containing a search query about job postings for an AI engineer in Bangalore on LinkedIn, The agent will process this message, decide to use the search tool, and return the results.
+#5. Finally, we print the result returned by the agent.
