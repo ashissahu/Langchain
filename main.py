@@ -54,6 +54,10 @@ def main():
 if __name__ == "__main__":
     main()
 
-## In this code, we have defined a tool called "search" that uses the TavilyClient to perform a web search based on a query. 
-# We then create an agent using the ChatOpenAI model and the search tool. 
-# When we invoke the agent with a HumanMessage asking about the weather in Bangalore, India, the agent will use the search tool to get the relevant information and return it as a response.
+#Here's a breakdown of the code:
+#1. We import the necessary libraries and load environment variables.
+#2. We create a Tavily client to use for our search tool.
+#3. We define a search tool using the @tool decorator, which takes a query as input and returns search results using the Tavily client.
+#4. We create an LLM instance (ChatOpenAI) and a list of tools (in this case, just the search tool).
+#5. We create an agent using the create_agent function, passing in the LLM and the tools.
+#6. In the main function, wHen we invoke the agent with a HumanMessage asking about the weather in Bangalore, India, the agent processes the message, decides to call the search tool with the appropriate query, gets the results, and generates a final response for the user, which is then printed.
