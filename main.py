@@ -43,3 +43,15 @@ Given the following information {Information} about a person , I want you to cre
 
 if __name__ == "__main__":
     main()
+
+#Here's a breakdown of the code:
+#1. We import the necessary modules and classes from langchain_core.prompts and langchain_ollama.
+#2. We load environment variables using load_dotenv(), which is useful for managing API keys and other configuration settings.
+#3. We define the main() function, which contains the core logic of our program.
+#4. We have a long string variable Information that contains detailed information about Narendra Modi.
+#5. We define a summary_template string that specifies the task we want the language model to perform: creating a short summary and two interesting facts about the person based on the provided information.
+#6. We create a PromptTemplate instance called summary_prompt_template, which takes the summary_template and specifies that it has an input variable called "Information".
+#7. We initialize a language model (either ChatOpenAI or ChatOllama) with the specified model and temperature settings.
+#8. We create a chain by combining the prompt template and the language model, which allows us to generate a prompt from the template and then pass it to the language model in one step.
+#9. We invoke the chain with the input information, which generates a response from the language model based on the prompt we defined.
+#10. Finally, we print the content of the response, which should contain the short summary and the two interesting facts about Narendra Modi.
