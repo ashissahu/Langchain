@@ -1,3 +1,8 @@
+#Manual step-by-step retrieval chain without LCEL to illustrate
+#how RAG works at a fundamental level before introducing the
+#more elegant LangChain Expression Language(LCEL) approach.
+
+
 #LANGSMITH TRACING - https://smith.langchain.com/public/9e968a21-f6f0-4663-9570-1c64c0b722b3/r
 #LANGSMITH TRACING - https://smith.langchain.com/o/a7f8bd85-b797-5733-8038-ce1ba498c5e8/projects/p/39de7e60-5367-4a74-a12b-71d45256eaac?runview=traces&peek=20260524T113453Z019e59c4-3d79-7fb3-9cb0-1ae423c01044&peeked_trace=20260524T113453561943Z019e59c4-3d79-7fb3-9cb0-1ae423c01044&columnVisibilityModel_runs%3AcolumnVisibilityModel%3Adefault=%7B%22feedback_stats%22%3Afalse%2C%22reference_example%22%3Afalse%7D&scroll_to=feedback
 
