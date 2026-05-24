@@ -13,6 +13,9 @@
 - Initial ReACT prompt - https://smith.langchain.com/hub/hwchase17/react?organizationId=a7f8bd85-b797-5733-8038-ce1ba498c5e8
 - Python Regular Expression Module - https://docs.python.org/3/library/re.html
 - Python INSPECT module - https://docs.python.org/3/library/inspect.html
+- OPENAI Function Calling - https://developers.openai.com/api/docs/guides/function-calling
+- OPENAI First Function Calling - https://openai.com/index/function-calling-and-other-api-updates/
+- Langchain TOOL Calling - https://docs.langchain.com/oss/python/langchain/overview
 
 
 # LangChain Workflow — One-Line Pointers
