@@ -1,13 +1,24 @@
-#LANGSMITH TRACING - https://smith.langchain.com/public/9e968a21-f6f0-4663-9570-1c64c0b722b3/r
-#LANGSMITH TRACING - https://smith.langchain.com/o/a7f8bd85-b797-5733-8038-ce1ba498c5e8/projects/p/39de7e60-5367-4a74-a12b-71d45256eaac?runview=traces&peek=20260524T113453Z019e59c4-3d79-7fb3-9cb0-1ae423c01044&peeked_trace=20260524T113453561943Z019e59c4-3d79-7fb3-9cb0-1ae423c01044&columnVisibilityModel_runs%3AcolumnVisibilityModel%3Adefault=%7B%22feedback_stats%22%3Afalse%2C%22reference_example%22%3Afalse%7D&scroll_to=feedback
+# Add LCEL-based retrieval chain implementation for comparison
+#Introduces create_retrieval_chain_with_lcel() using LangChain Expression
+#Language to demonstrate the declarative, composable approach alongside the existing function-based implementation.
+
+#LANGSMITH TRACING:https://smith.langchain.com/public/227e1d10-d295-471c-8d81-afe0f0e90613/r
+
 
 import os
+from operator import itemgetter #itemgetter is a convenient function that allows us to create a callable that retrieves an item from its operand using the provided key. In our case, we will use itemgetter to retrieve the "question" from the input dictionary when we create our LCEL chain.
+# We will use itemgetter in our LCEL chain to extract the "question" from the input dictionary and pass it through the retriever and formatter to create the context for the language model. This allows us to create a more declarative and composable retrieval chain using LCEL.
 
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough #A simple runnable that just passes through its input. We can use this to create intermediate steps in our LCEL chain.
+# We will use RunnablePassthrough to create a step in our LCEL chain that takes the input question, passes it through the retriever to get relevant documents, and then formats those documents into a context string that can be used in the prompt for the language model.
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
+
 
 load_dotenv()
 
@@ -15,8 +26,12 @@ print("Initializing components...")
 
 embeddings = OpenAIEmbeddings()
 llm = ChatOpenAI()
-vectorstore = PineconeVectorStore(index_name=os.environ["INDEX_NAME"], embedding=embeddings) #This will connect to the existing Pinecone index that we created during the ingestion process. We are not creating a new index here, but rather connecting to the existing one to perform retrieval operations.
-retriever = vectorstore.as_retriever(search_kwargs={"k": 3}) #This will create a retriever that can be used to retrieve relevant documents from the Pinecone index based on a query. The search_kwargs parameter allows us to specify additional parameters for the retrieval process, such as the number of top results to return (k=3 in this case).
+
+vectorstore = PineconeVectorStore(
+    index_name=os.environ["INDEX_NAME"], embedding=embeddings
+)
+
+retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
 
 prompt_template = ChatPromptTemplate.from_template(
     """Answer the question based only on the following context:
@@ -34,6 +49,9 @@ def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
 
+# ============================================================================
+# IMPLEMENTATION 1: Without LCEL (Simple Function-Based Approach)
+# ============================================================================
 def retrieval_chain_without_lcel(query: str):
     """
     Simple retrieval chain without LCEL.
@@ -47,19 +65,98 @@ def retrieval_chain_without_lcel(query: str):
     - More verbose and error-prone
     """
     # Step 1: Retrieve relevant documents
-    docs = retriever.invoke(query) #This will use the retriever to retrieve relevant documents from the Pinecone index based on the input query. The retrieved documents will be returned as a list of document objects, which we can then format and use as context for generating a response.
+    docs = retriever.invoke(query)
 
     # Step 2: Format documents into context string
-    context = format_docs(docs) #This will take the list of retrieved document objects and format them into a single string that can be used as context for the language model. The format_docs function is a helper function that concatenates the content of each retrieved document into a single string, separated by double newlines ("\n\n") for better readability. This formatted context will then be passed to the prompt template for generating a response based on the retrieved information.
+    context = format_docs(docs)
 
     # Step 3: Format the prompt with context and question
-    messages = prompt_template.format_messages(context=context, question=query) #This will take the formatted context string and the original query and format them into a structured prompt that can be passed to the language model for generation. The prompt_template is a ChatPromptTemplate that defines the structure of the prompt, including placeholders for the context and question. The format_messages method will replace these placeholders with the actual context and question values, resulting in a list of messages that can be used as input for the language model to generate a response.
+    messages = prompt_template.format_messages(context=context, question=query)
 
     # Step 4: Invoke LLM with the formatted messages
-    response = llm.invoke(messages) #This will take the formatted messages (which include the context and question) and pass them to the language model (LLM) for generation. The invoke method will process the input messages and generate a response based on the provided context and question. The generated response will be returned as an object that contains the content of the response, which we can then extract and return as the final answer to the query.
+    response = llm.invoke(messages)
 
     # Step 5: Return the content
     return response.content
+
+# ============================================================================
+# IMPLEMENTATION 2: With LCEL (LangChain Expression Language) - BETTER APPROACH
+# ============================================================================
+
+# Here we are not passing any arguments to the create_retrieval_chain_with_lcel function.
+def create_retrieval_chain_with_lcel():
+    """
+    Create a retrieval chain using LCEL (LangChain Expression Language).
+    Returns a chain that can be invoked with {"question": "..."}
+
+    Advantages over non-LCEL approach:
+    - Declarative and composable: Easy to chain operations with pipe operator (|)
+    - Built-in streaming: chain.stream() works out of the box
+    - Built-in async: chain.ainvoke() and chain.astream() available
+    - Batch processing: chain.batch() for multiple inputs
+    - Type safety: Better integration with LangChain's type system
+    - Less code: More concise and readable
+    - Reusable: Chain can be saved, shared, and composed with other chains
+    - Better debugging: LangChain provides better observability tools
+    """
+    retrieval_chain = (
+        RunnablePassthrough.assign(
+            context=itemgetter("question") | retriever | format_docs
+        )
+        | prompt_template
+        | llm
+        | StrOutputParser()
+    )
+    return retrieval_chain
+
+#How retrieval_chain_with_lcel works:
+#1. We start by creating a retrieval chain using LCEL. The chain is defined in a declarative manner using the pipe operator (|) to chain together operations.
+#2. The first part of the chain uses RunnablePassthrough.assign to create a step that takes the input question (extracted using itemgetter("question")), passes it through the retriever to get relevant documents, and then formats those documents into a context string using the format_docs function (REMEMBER - retriever returns Documents (not strings) and format_docs converts them → string). This creates a new variable called "context" that contains the formatted context string.
+#3. The next part of the chain takes the formatted context and the original question and formats them into a structured prompt using the prompt_template. This creates a list of messages that can be passed to the language model.
+#4. The formatted messages are then passed to the language model (llm) for generation, and the output is parsed using StrOutputParser to extract the final answer as a string.
+#5. The resulting chain can be invoked with an input dictionary containing the "question" key, and it will return the generated answer based on the retrieved context.
+
+
+#For example, if we invoke the chain with {"question": "What is RAG?"}, the chain will:
+# Example: invoke({"question": "What is RAG?"})
+
+# Step 1: Extract the question
+# itemgetter("question") → "What is RAG?"
+
+# Step 2: Retrieve relevant documents
+# "What is RAG?" → embedding → [0.21, -0.78, 0.55, ...]
+# → query Pinecone index → similarity search
+# → returns:
+# [
+#   Document(page_content="RAG stands for Retrieval Augmented Generation..."),
+#   Document(page_content="Vector databases store embeddings...")
+# ]
+
+# Step 3: Format retrieved documents into context string
+# format_docs(docs) →
+# "RAG stands for Retrieval Augmented Generation...\n\nVector databases store embeddings..."
+
+# Step 4: Format prompt using context + question
+# prompt_template →
+# """
+# Answer the question based on the context below:
+
+# Context:
+# RAG stands for Retrieval Augmented Generation...
+# Vector databases store embeddings...
+
+# Question:
+# What is RAG?
+# """
+
+# Step 5: Pass prompt to LLM
+# → LLM generates answer:
+# "RAG (Retrieval-Augmented Generation) is a technique that combines retrieval with generation..."
+
+# Step 6: Parse output
+# StrOutputParser() → clean string output
+
+
 
 
 if __name__ == "__main__":
@@ -88,21 +185,35 @@ if __name__ == "__main__":
     print("\nAnswer:")
     print(result_without_lcel)
 
-#Here's a breakdown of the code:
-#1. We start by importing the necessary libraries and loading environment variables using dotenv.
-#2. We initialize the components needed for our RAG system, including the OpenAI embeddings, the ChatOpenAI language model, and the Pinecone vector store retriever. The vector store is connected to an existing Pinecone index that we created during the ingestion process.
-#3. We define a prompt template using ChatPromptTemplate, which specifies how the retrieved context and the user's question will be structured when passed to the language model for generation.
-#4. We define a helper function format_docs to format the retrieved documents into a single string that can be used as context for the language model.
-#5. We implement a retrieval chain function retrieval_chain_without_lcel that performs the retrieval and generation steps manually without using LCEL. This function retrieves relevant documents based on the input query, formats them into context, formats the prompt, and invokes the language model to generate a response.
-#6. In the main block, we define a query and demonstrate two implementations: a raw invocation of the language model without RAG, and the retrieval chain implementation without LCEL. We print the results for both implementations to compare the answers generated by the language model with and without the use of retrieved context.
+    # ========================================================================
+    # Option 2: Use implementation WITH LCEL (Better Approach)
+    # ========================================================================
+    print("\n" + "=" * 70)
+    print("IMPLEMENTATION 2: With LCEL - Better Approach")
+    print("=" * 70)
+    print("Why LCEL is better:")
+    print("- More concise and declarative")
+    print("- Built-in streaming: chain.stream()")
+    print("- Built-in async: chain.ainvoke()")
+    print("- Easy to compose with other chains")
+    print("- Better for production use")
+    print("=" * 70)
 
-#Here user query is converted into an embedding and then used to query the Pinecone index for similar embeddings. The retrieved documents are then formatted and passed as context to the language model to generate a response that is grounded in the retrieved information. This allows us to provide more accurate and informed answers to user queries by leveraging the relevant information stored in the Pinecone index.
-# User query embedding is happening implicitly within the retriever.invoke(query) call, where the retriever uses the query to retrieve relevant documents based on vector similarity in the embedding space. The retrieved documents are then used as context for generating a response from the language model.
+    chain_with_lcel = create_retrieval_chain_with_lcel()
+    result_with_lcel = chain_with_lcel.invoke({"question": query})
+    print("\nAnswer:")
+    print(result_with_lcel)
 
+    #Here's a breakdown of the code:
+    #1. We start by defining a function create_retrieval_chain_with_lcel() that creates a retrieval chain using LCEL. The chain is defined in a declarative manner using the pipe operator (|) to chain together operations.
+    #2. The first part of the chain uses RunnablePassthrough.assign to create a step that takes the input question (extracted using itemgetter("question")), passes it through the retriever to get relevant documents, and then formats those documents into a context string using the format_docs function. This creates a new variable called "context" that contains the formatted context string.
+    #3. The next part of the chain takes the formatted context and the original question and formats them into a structured prompt using the prompt_template. This creates a list of messages that can be passed to the language model.
+    #4. The formatted messages are then passed to the language model (llm) for generation, and the output is parsed using StrOutputParser to extract the final answer as a string.
+    #5. In the main block, we demonstrate the use of this LCEL-based retrieval chain by invoking it with a sample query and printing the resulting answer. We also compare it to a raw LLM invocation without RAG and a function-based retrieval chain without LCEL to highlight the advantages of using LCEL for building retrieval chains.
 
-#The main disadvantages of the implementation without LCEL are:
-#1. Manual step-by-step execution: The retrieval and generation steps are executed manually, which can be more error-prone and less efficient compared to using a structured chain that handles these steps automatically.
-#2. No built-in streaming support: This implementation does not have built-in support for streaming responses from the language model, which can be a limitation for applications that require real-time or incremental responses.
-#3. No async support without additional code: This implementation does not natively support asynchronous execution, which can be a drawback for applications that need to handle multiple requests concurrently or require non-blocking operations.
-#4. Harder to compose with other chains: This implementation is less modular and harder to compose with other chains or components in a larger system, as it does not follow a structured approach to chaining operations together.
-#5. More verbose and error-prone: The manual handling of each step can lead to more verbose code and a higher likelihood of errors, especially as the complexity of the retrieval and generation process increases. Using a structured chain with LCEL can help mitigate these issues by providing a more organized and efficient way to manage the flow of data and operations.
+    #Here we have 3 implementations:
+    #1. Raw LLM Invocation (No RAG): This is the simplest approach where we directly invoke the language model with the input query without any retrieval or context. This will likely produce a less accurate answer since the model has no additional information to work with.
+    #2. Retrieval Chain WITHOUT LCEL: This implementation manually retrieves relevant documents, formats them into a context string, and then generates a response using the language model. This approach is more accurate than the raw invocation but is more verbose and less composable.
+    #3. Retrieval Chain WITH LCEL: This implementation uses LangChain Expression Language (LCEL) to create a more declarative and composable retrieval chain. It allows for built-in streaming, async support, and better integration with LangChain's type system. This is the recommended approach for building retrieval chains in production applications.
+
+    
