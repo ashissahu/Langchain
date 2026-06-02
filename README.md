@@ -1,4 +1,11 @@
 # TEXT SPLITTER PLAYGROUND : https://langchain-text-splitter.streamlit.app/
+# Chat Langchain : https://chat.langchain.com/?threadId=1dc15a7f-beae-4347-8302-2d12f3c7b658
+# Chat Langchain Github : https://github.com/langchain-ai/chat-langchain
+# Streamlit Session State : https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state
+# Streamlit Chat : https://github.com/AI-Yash/st-chat
+# Streamlit : https://github.com/streamlit/streamlit
+# Streamlit Docs : https://docs.streamlit.io/
+
 
 
 
